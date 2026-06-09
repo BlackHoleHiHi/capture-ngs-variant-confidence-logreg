@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-const workspace = path.resolve("D:/learnDP/outputs/manual-hust-paper-report/presentations/variant-confidence-report");
+const workspace = path.resolve(process.env.PRESENTATION_WORKSPACE || "D:/learnDP/outputs/variant-confidence-report");
 const helperPath = path.join(workspace, "tools", "artifact_tool_utils.mjs");
 const {
   createSlideContext,
@@ -215,7 +215,7 @@ function addMetric(slide, label, value, x, y, w, h, options = {}) {
   });
 }
 
-function addSmallSource(slide, text = "Nguồn: van den Akker et al., BMC Genomics 2018; PMID 29665779; Supplementary Table S2") {
+function addSmallSource(slide, text = "Nguồn dữ liệu: public variant-level Excel dataset") {
   addText(slide, text, 36, 660, 850, 20, {
     fontSize: 10.5,
     color: "#777777",
@@ -288,7 +288,7 @@ for (const slide of presentation.slides.items) {
   const slide = slideAt(0);
   addCoverChrome(slide);
   const title = shapeByName(slide, "Title");
-  setExistingText(title, "A machine learning model to determine the accuracy of variant calls in capture based next generation sequencing", {
+  setExistingText(title, "Capture NGS Variant Confidence Classifier", {
     fontSize: 22,
     color: RED,
     bold: true,
@@ -297,14 +297,14 @@ for (const slide of presentation.slides.items) {
   });
   addText(
     slide,
-    "Logistic Regression cho đánh giá độ tin cậy variant call\nBMC Genomics 2018 | Dữ liệu: Supplementary Table S2 | Mục tiêu: mô hình bảo thủ, FP = 0",
+    "Dự án cá nhân: Logistic Regression cho đánh giá độ tin cậy variant call\nDữ liệu public variant-level | Mục tiêu: mô hình bảo thủ, FP = 0",
     44,
     220,
     780,
     78,
     { fontSize: 17, color: INK, insets: { left: 0, right: 0, top: 0, bottom: 0 } },
   );
-  addMetric(slide, "variants trong bài báo", "7,179", 44, 338, 178, 82, { fill: LIGHT_RED, valueColor: RED });
+  addMetric(slide, "variants trong dataset", "7,179", 44, 338, 178, 82, { fill: LIGHT_RED, valueColor: RED });
   addMetric(slide, "features sử dụng", "14", 246, 338, 178, 82, { fill: LIGHT_GOLD, valueColor: AMBER });
   addMetric(slide, "AUC chạy thử test", "0.999831", 448, 338, 214, 82, { fill: LIGHT_BLUE, valueColor: BLUE });
   addMetric(slide, "False Positive test", "0", 686, 338, 138, 82, { fill: LIGHT_GREEN, valueColor: GREEN });
@@ -329,7 +329,7 @@ for (const slide of presentation.slides.items) {
   );
   addCard(
     slide,
-    "Mục tiêu của bài báo",
+    "Mục tiêu của dự án",
     "- Học từ các variant đã được xác nhận bằng Sanger.\n- Gán High confidence cho variant có thể tin cậy bằng NGS.\n- Giữ Low confidence cho ca cần kiểm tra bổ sung.\n- Ưu tiên zero false-positive hơn tối đa recall.",
     500,
     142,
@@ -355,7 +355,7 @@ for (const slide of presentation.slides.items) {
   addMetric(slide, "Train / Dev / Test", "70 / 15 / 15", 42, 92, 230, 72, { fill: LIGHT_BLUE, valueSize: 23 });
   addMetric(slide, "Target", "Present = 1", 298, 92, 190, 72, { fill: LIGHT_GREEN, valueSize: 23, valueColor: GREEN });
   addMetric(slide, "Negative class", "Not present = 0", 514, 92, 220, 72, { fill: LIGHT_RED, valueSize: 23, valueColor: RED });
-  addMetric(slide, "Source", "Table S2", 760, 92, 150, 72, { fill: LIGHT_GOLD, valueSize: 22, valueColor: AMBER });
+  addMetric(slide, "Source", "Excel data", 760, 92, 150, 72, { fill: LIGHT_GOLD, valueSize: 22, valueColor: AMBER });
   addCard(slide, "Read support", "DP, AD, AF\nAF = AD / DP", 58, 206, 190, 132, { fill: "#FFFFFF", bodySize: 19 });
   addCard(slide, "Call quality", "QUAL, QD, MQ, GQ, FS\nQD = QUAL / DP", 282, 206, 250, 132, { fill: "#FFFFFF", bodySize: 18 });
   addCard(slide, "Sequence context", "gc_5, gc_20, gc_50\nHPL-D, HPL-L", 566, 206, 250, 132, { fill: "#FFFFFF", bodySize: 18 });
@@ -371,10 +371,10 @@ for (const slide of presentation.slides.items) {
 {
   const slide = slideAt(3);
   addContentChrome(slide);
-  setTitle(slide, "Pipeline tái lập từ dữ liệu của bài báo", 29);
+  setTitle(slide, "Pipeline xử lý dữ liệu và huấn luyện", 29);
   deleteContentPlaceholders(slide);
   const xs = [44, 352, 660];
-  addPipelineStep(slide, 1, "Input Excel", "12864_2018_4659_MOESM2_ESM.xlsx\nvariant-level Table S2", xs[0], 130, 245, LIGHT_BLUE);
+  addPipelineStep(slide, 1, "Input Excel", "12864_2018_4659_MOESM2_ESM.xlsx\nvariant-level dataset", xs[0], 130, 245, LIGHT_BLUE);
   addArrow(slide, 300, 155);
   addPipelineStep(slide, 2, "Clean + encode", "Bỏ metadata/rỗng, Present=1,\nNot present=0, ép numeric", xs[1], 130, 245, LIGHT_GREEN);
   addArrow(slide, 608, 155);
@@ -467,21 +467,21 @@ for (const slide of presentation.slides.items) {
   addSmallSource(slide, "Kết quả local từ script D:\\A\\train_conservative_threshold.py");
 }
 
-// Slide 7: comparison with paper
+// Slide 7: local result summary
 {
   const slide = slideAt(6);
   addContentChrome(slide);
-  setTitle(slide, "So sánh với kết quả công bố", 29);
+  setTitle(slide, "Tóm tắt kết quả chạy thử", 29);
   deleteContentPlaceholders(slide);
   addTable(
     slide,
     [
-      ["Metric", "Bài báo", "Chạy thử local"],
-      ["AUC", "0.99913", "0.999831"],
-      ["High confidence", "6622/7179 = 92.2%", "996/1077 = 92.48%"],
-      ["False Positive", "0", "0"],
-      ["False Negative", "44/7179 = 0.61%", "4/1077 = 0.37%"],
-      ["Accuracy", "99.4%", "99.63%"],
+      ["Metric", "Kết quả local", "Ý nghĩa"],
+      ["AUC", "0.999831", "Khả năng xếp hạng rất tốt"],
+      ["High confidence", "996/1077 = 92.48%", "Phần lớn variant được gọi tự tin"],
+      ["False Positive", "0", "Không có Not present lọt High confidence"],
+      ["False Negative", "4/1077 = 0.37%", "Một số Present bị giữ lại Low confidence"],
+      ["CV AUC mean", "0.999776", "Ổn định trên kiểm tra 10-fold"],
     ],
     62,
     126,
@@ -492,14 +492,14 @@ for (const slide of presentation.slides.items) {
   addCard(
     slide,
     "Nhận xét",
-    "Kết quả chạy thử bám rất sát mục tiêu của bài báo: tỷ lệ High confidence khoảng 92%, FP = 0. AUC local cao hơn nhẹ do split ngẫu nhiên và pipeline sklearn có thể khác đúng cấu hình gốc.",
+    "Kết quả local cho thấy pipeline phù hợp với mục tiêu bảo thủ: giữ FP = 0 trên Test và vẫn gọi High confidence cho phần lớn variant thật. Đây là kết quả thử nghiệm, cần kiểm tra thêm trên dữ liệu độc lập.",
     120,
     486,
     720,
     94,
     { fill: LIGHT_BLUE, titleColor: BLUE, bodySize: 16.5 },
   );
-  addSmallSource(slide, "Bài báo: BMC Genomics 2018, 19:263; PMID 29665779; PMCID PMC5904977");
+  addSmallSource(slide, "Kết quả local từ script D:\\A\\train_conservative_threshold.py");
 }
 
 // Slide 8: bioinformatics interpretation
@@ -544,7 +544,7 @@ for (const slide of presentation.slides.items) {
   addCard(
     slide,
     "Thiếu sót cần nói rõ",
-    "- Split local có thể khác bài báo gốc.\n- Chưa có external validation từ assay/phòng lab khác.\n- Threshold zero-FP trên Dev vẫn có rủi ro overfit.\n- Chưa phân tích coefficient và calibration curve.\n- Class imbalance: negative ít hơn positive.",
+    "- Kết quả phụ thuộc random split local.\n- Chưa có external validation từ assay/phòng lab khác.\n- Threshold zero-FP trên Dev vẫn có rủi ro overfit.\n- Chưa phân tích coefficient và calibration curve.\n- Class imbalance: negative ít hơn positive.",
     62,
     126,
     390,

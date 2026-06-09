@@ -29,6 +29,6 @@ The threshold is selected on the Development set as the lowest threshold with ze
 
 ## Limitations
 
-- Reproduction uses a local split, not the exact original split from the paper.
+- Results are based on a local Train/Dev/Test split and may change with a different random seed.
 - The threshold should be recalibrated before use on a new panel, sequencer, pipeline, or lab dataset.
 - This model should support variant review, not replace clinical validation.

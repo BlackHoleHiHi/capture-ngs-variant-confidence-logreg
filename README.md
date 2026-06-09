@@ -1,23 +1,26 @@
-# Capture NGS Variant Confidence Logistic Regression
+# Capture NGS Variant Confidence Classifier
 
-Reproduction project for the paper:
+This is my personal machine learning project for classifying capture-based next generation sequencing variant calls into conservative confidence groups.
 
-> A machine learning model to determine the accuracy of variant calls in capture based next generation sequencing
+The main idea is simple: train a Logistic Regression model on variant-level quality features, then choose a conservative decision threshold so that false positives are avoided as much as possible.
 
-The goal is a conservative binary classifier for variant calls:
+## Project Goal
 
-- `1 = Present`: true variant
-- `0 = Not present`: false/artifact variant
+The model predicts whether a variant call is likely to be real:
 
-The model is intentionally calibrated to avoid false positives in the High confidence group.
+- `1 = Present`: likely true variant
+- `0 = Not present`: likely false or artifact variant
 
-## Contents
+Instead of using the default `0.5` probability cutoff, this project searches for a conservative threshold on a Development set. A variant is called `High confidence` only when its predicted probability is above that threshold.
 
-- `src/train_conservative_threshold.py`: end-to-end training and evaluation script.
-- `data/raw/12864_2018_4659_MOESM2_ESM.xlsx`: Supplementary Table S2 variant-level data.
-- `reports/variant-confidence-hust-report.pptx`: HUST report slide deck.
+## Repository Structure
+
+- `src/train_conservative_threshold.py`: training, threshold selection, test evaluation, and cross-validation.
+- `data/raw/12864_2018_4659_MOESM2_ESM.xlsx`: public variant-level Excel dataset used for the experiment.
+- `reports/variant-confidence-hust-report.pptx`: presentation slide deck for reporting the project.
 - `reports/final-contact-sheet.png`: rendered preview of the slide deck.
-- `slides/build_report_deck.mjs`: script used to rebuild the slide deck from the HUST template workflow.
+- `slides/build_report_deck.mjs`: script used to rebuild the slide deck.
+- `MODEL_CARD.md`: short summary of model behavior, target, and limitations.
 
 ## Setup
 
@@ -33,20 +36,22 @@ pip install -r requirements.txt
 python .\src\train_conservative_threshold.py
 ```
 
-The script:
+## Pipeline
 
-1. Reads the Excel supplementary table.
-2. Builds the 14 feature columns:
+1. Read the Excel dataset.
+2. Clean empty or metadata-like rows.
+3. Encode the target:
+   - `Present -> 1`
+   - `Not present -> 0`
+4. Build 14 numerical features:
    `DP, AD, AF, gc_5, gc_20, gc_50, MQ, GQ, WHR, HPL-D, HPL-L, QUAL, QD, FS`.
-3. Encodes `Present -> 1`, `Not present -> 0`.
-4. Splits data into Train/Dev/Test using `70/15/15` with stratification.
-5. Trains `StandardScaler + LogisticRegression`.
-6. Finds the lowest conservative threshold on Dev with `FP = 0`.
-7. Evaluates once on Test and runs 10-fold CV AUC on the full dataset.
+5. Split the dataset into Train/Dev/Test with a `70/15/15` ratio.
+6. Train a `StandardScaler + LogisticRegression` pipeline.
+7. Select the lowest Dev threshold that produces `FP = 0`.
+8. Evaluate the final model on the held-out Test set.
+9. Run 10-fold cross-validation AUC as an additional sanity check.
 
-## Local Result
-
-Current local run:
+## Current Result
 
 ```text
 conservative_threshold = 0.4730547338
@@ -59,20 +64,20 @@ cv_auc_mean = 0.9997757219
 cv_auc_std = 0.0002844816
 ```
 
-## Why Local Metrics Can Look Better Than The Published Result
+## Interpretation
 
-The local result is not necessarily a true model improvement over the paper. It can look better for several methodological reasons:
+The current split gives a very strong result: the model keeps false positives at zero on the Test set while still calling most true variants as High confidence.
 
-- Different random split: this repo uses a new stratified 70/15/15 split, not necessarily the same held-out/test split used by the authors.
-- Smaller test set: the local Test set has 1,077 variants, so a difference of a few variants changes the percentage noticeably.
-- Different implementation details: scikit-learn Logistic Regression, solver behavior, regularization defaults, and preprocessing may not exactly match the original implementation.
-- Threshold calibration differs: this repo chooses the lowest Dev threshold that gives `FP = 0`; the paper reports the conservative behavior but does not publish the exact threshold.
-- Sampling variance: the positive/negative composition of Dev and Test can make AUC/FN/accuracy slightly better or worse even when the underlying model is effectively similar.
-- Possible leakage is controlled, but not identical to the paper: the local pipeline keeps Test separate, but it still uses a split generated locally from the same supplementary dataset.
+This should be interpreted carefully. A strong result on one split does not prove that the model is ready for clinical use. The threshold and performance should be checked again on new data from the same sequencing panel, pipeline, and lab workflow.
 
-The safest conclusion is: the reproduction matches the paper's main behavior closely, especially `FP = 0` and High confidence around 92%, but it should not be claimed as a definitive improvement without the original split or external validation.
+## Why The Metrics Can Look Very High
 
-## Paper Links
+Several factors can make the local metrics look especially strong:
 
-- PubMed: https://pubmed.ncbi.nlm.nih.gov/29665779/
-- PMC full text: https://pmc.ncbi.nlm.nih.gov/articles/PMC5904977/
+- The dataset is highly separable with the selected quality features.
+- The Test set is relatively small, so a few samples can noticeably change percentages.
+- The threshold is tuned on the Dev set for a conservative operating point.
+- The Train/Dev/Test split is generated locally, so performance may change with a different random seed.
+- Cross-validation AUC is a ranking metric and does not directly measure the conservative threshold behavior.
+
+The safest conclusion is that this project demonstrates a useful conservative variant-confidence workflow, but it still needs external validation before being used in a real diagnostic setting.

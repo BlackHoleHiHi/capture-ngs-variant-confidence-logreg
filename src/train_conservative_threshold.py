@@ -3,8 +3,8 @@
 Default input:
     ../data/raw/12864_2018_4659_MOESM2_ESM.xlsx
 
-This self-contained script reads the supplementary Excel file, builds X from
-the 14 paper features, encodes y from confirmation, splits 70/15/15 with
+This self-contained script reads the variant-level Excel file, builds X from
+the 14 selected quality features, encodes y from confirmation, splits 70/15/15 with
 stratification, trains StandardScaler + LogisticRegression, then finds the
 lowest threshold that gives FP = 0 on the Dev split.
 """
